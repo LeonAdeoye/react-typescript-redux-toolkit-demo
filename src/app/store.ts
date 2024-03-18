@@ -6,6 +6,13 @@ import userReducer from '../features/user/userSlice';
 // @ts-ignore
 //import reduxLogger from 'redux-logger';
 //import { Middleware } from '@reduxjs/toolkit';
+// const customLoggerMiddleware: Middleware = (store) => (next) => (action) =>
+// {
+//     console.log('dispatching', action);
+//     const result = next(action);
+//     console.log('next state', store.getState());
+//     return result
+// }
 
 const worker = new Worker(new URL('./action-reader.js', import.meta.url));
 
@@ -15,27 +22,23 @@ type actionToDispatchType =
     payload?: number
 }
 
-// Custom middleware created using the Middleware type from Redux Toolkit
-// const customLoggerMiddleware: Middleware = (store) => (next) => (action) =>
-// {
-//     console.log('dispatching', action);
-//     const result = next(action);
-//     console.log('next state', store.getState());
-//     return result
-// }
-
 const store = configureStore({
     reducer: {
         cake: cakeReducer,
         icecream: icecreamReducer,
         user: userReducer
     },
-    // middleware: (getDefaultMiddleware) => getDefaultMiddleware()
-    //     .concat(reduxLogger).concat(customLoggerMiddleware)
+    // middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(reduxLogger).concat(customLoggerMiddleware)
 });
 
-type AnyObject = Record<string, any>;
+const getAllActionStates = () =>
+{
+    const actionStates: any[] = [];
+    Object.values(store.getState()).forEach((slice) => actionStates.push(slice));
+    return actionStates;
+}
 
+type AnyObject = Record<string, any>;
 function findChangedProperties<T extends AnyObject, U extends AnyObject>(a: T, b: U): Partial<U>
 {
     const changedProperties: Map<string, any> = new Map();
@@ -67,8 +70,6 @@ function findChangedProperties<T extends AnyObject, U extends AnyObject>(a: T, b
     return result;
 }
 
-// echo '[{"type": "cake/ordered"},{"type": "cake/restocked", "payload": 10}]' | ./spark publish -topic action-dispatch-reader -server localhost:9007 -type json -proto amps
-
 worker.addEventListener('message', (event) =>
 {
     const { data } = event;
@@ -90,8 +91,7 @@ worker.addEventListener('message', (event) =>
                 store.dispatch(actionToDispatch);
                 let newState: any = getAllActionStates();
                 let delta = findChangedProperties(previousState, newState);
-
-                console.log(JSON.stringify({ action: actionToDispatch, delta: delta, previousState: previousState, newState: newState}));
+                worker.postMessage({timestamp: Date.now(), action: actionToDispatch, delta: delta, previousState: previousState, newState: newState});
             }
             else
                 console.log("Action dispatch message received from worker does not contain a type property.");
@@ -100,17 +100,6 @@ worker.addEventListener('message', (event) =>
     else
         console.log("Action dispatch message received from worker does not contain an array of actions.");
 });
-
-
-
-const getAllActionStates = () =>
-{
-    const actionStates: any[] = [];
-
-    Object.values(store.getState()).forEach((slice) => actionStates.push(slice));
-
-    return actionStates;
-}
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
