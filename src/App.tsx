@@ -1,25 +1,20 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import {UserView} from "./features/user/userView";
+import {CakeView} from "./features/cake/cakeView";
+import {IcecreamView} from "./features/icecream/icecreamView";
+import {Provider} from "react-redux";
+import store from "./app/store";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+      <Provider store={store}>
+          <div className="App">
+              <UserView />
+              <CakeView />
+              <IcecreamView />
+          </div>
+      </Provider>
   );
 }
 
