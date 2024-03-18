@@ -10,7 +10,7 @@ const main = async () =>
         const client = new Client(clientName);
         await client.connect(url);
         const cmd = new Command("subscribe").topic(topicName);
-        await client.execute(cmd, onActionDispatched);
+        await client.execute(cmd, (message) => postMessage({messageType: "actionDispatched", action: message.data}));
         console.log("Action dispatch reader web worker Connected to AMPS using URL: ", url);
     }
     catch (e)
@@ -18,7 +18,5 @@ const main = async () =>
         console.error(e);
     }
 }
-
-export const onActionDispatched = (message) => postMessage({messageType: "actionDispatched", action: message.data});
 
 main().then(() => console.log("AMPS action dispatch subscription completed."));
