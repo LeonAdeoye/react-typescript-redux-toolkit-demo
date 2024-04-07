@@ -9,7 +9,7 @@ self.addEventListener('message', async (event) =>
 {
     try
     {
-        await client.publish('action-dispatch-response', JSON.stringify(event.data));
+        client.publish('action-dispatch-response', event.data);
     }
     catch (e)
     {
